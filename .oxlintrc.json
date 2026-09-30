@@ -9,7 +9,8 @@
   "rules": {
     "typescript/consistent-type-imports": "error",
     "import/no-cycle": "error",
-    "import/no-unassigned-import": ["warn", { "allow": ["reflect-metadata"] }]
+    "import/no-unassigned-import": ["warn", { "allow": ["reflect-metadata"] }],
+    "typescript/no-extraneous-class": ["warn", { "allowWithDecorator": true }]
   },
   "env": {
     "builtin": true,
