@@ -1,9 +1,8 @@
-import 'reflect-metadata';
 import { Injectable } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_BOT_NAME, GRAMMY_MODULE_OPTIONS } from '../src/index.ts';
+import { DEFAULT_BOT_NAME, GRAMMY_MODULE_OPTIONS } from '../../src/index.ts';
 
 @Injectable()
 class Dependency {
