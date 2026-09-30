@@ -2,6 +2,7 @@ export { DEFAULT_BOT_NAME, GRAMMY_MODULE_OPTIONS } from './constants.ts';
 export { Update } from './decorators/core/update.decorator.ts';
 export { InjectApi } from './decorators/inject/inject-api.decorator.ts';
 export { InjectBot } from './decorators/inject/inject-bot.decorator.ts';
+export { Action, CallbackQuery } from './decorators/listeners/action.decorator.ts';
 export { Command } from './decorators/listeners/command.decorator.ts';
 export { Hears } from './decorators/listeners/hears.decorator.ts';
 export { Help } from './decorators/listeners/help.decorator.ts';
