@@ -8,6 +8,7 @@ export { Hears } from './decorators/listeners/hears.decorator.ts';
 export { Help } from './decorators/listeners/help.decorator.ts';
 export { On } from './decorators/listeners/on.decorator.ts';
 export { Start } from './decorators/listeners/start.decorator.ts';
+export { Use } from './decorators/listeners/use.decorator.ts';
 export type { ListenerMetadata, ListenerType } from './interfaces/listener-metadata.interface.ts';
 export type {
   NestGrammyModuleOptions,
