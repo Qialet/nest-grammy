@@ -4,6 +4,7 @@ export { InjectApi } from './decorators/inject/inject-api.decorator.ts';
 export { InjectBot } from './decorators/inject/inject-bot.decorator.ts';
 export { Command } from './decorators/listeners/command.decorator.ts';
 export { Help } from './decorators/listeners/help.decorator.ts';
+export { On } from './decorators/listeners/on.decorator.ts';
 export { Start } from './decorators/listeners/start.decorator.ts';
 export type { ListenerMetadata, ListenerType } from './interfaces/listener-metadata.interface.ts';
 export type {
