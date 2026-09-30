@@ -4,4 +4,5 @@ export type {
   NestGrammyModuleOptions,
   NestGrammyWebhookOptions,
 } from './interfaces/module-options.interface.ts';
+export { NestGrammyModule } from './module/nest-grammy.module.ts';
 export { getApiToken, getBotToken, getOptionsToken } from './utils/tokens.ts';
