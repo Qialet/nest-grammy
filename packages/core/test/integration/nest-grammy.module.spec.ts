@@ -5,6 +5,7 @@ import { Api, Bot } from 'grammy';
 import type { UserFromGetMe } from 'grammy/types';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { NestGrammyModuleOptions } from '../../src/index.ts';
 import { getApiToken, getBotToken, NestGrammyModule } from '../../src/index.ts';
 
 const TOKEN = '123456:TEST-TOKEN';
@@ -35,6 +36,11 @@ class BotConsumer {
 
 @Module({ providers: [BotConsumer], exports: [BotConsumer] })
 class ConsumerModule {}
+
+const CONFIG = Symbol('CONFIG');
+
+@Module({ providers: [{ provide: CONFIG, useValue: { token: TOKEN } }], exports: [CONFIG] })
+class ConfigModule {}
 
 describe('NestGrammyModule', () => {
   let moduleRef: TestingModule | undefined;
@@ -86,11 +92,57 @@ describe('NestGrammyModule', () => {
     });
   });
 
+  describe('forRootAsync', () => {
+    it('resolves options with useFactory, inject and imports', async () => {
+      const ref = await compile([
+        NestGrammyModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [CONFIG],
+          useFactory: (config: { token: string }) => ({ token: config.token }),
+        }),
+        ConsumerModule,
+      ]);
+
+      expect(ref.get(BotConsumer).bot.token).toBe(TOKEN);
+    });
+
+    it('resolves options with an async useFactory', async () => {
+      const ref = await compile([
+        NestGrammyModule.forRootAsync({ useFactory: async () => ({ token: TOKEN }) }),
+      ]);
+
+      expect(ref.get<Bot>(getBotToken()).token).toBe(TOKEN);
+    });
+
+    it('resolves options with useClass', async () => {
+      @Injectable()
+      class OptionsFactory {
+        createNestGrammyOptions(): NestGrammyModuleOptions {
+          return { token: TOKEN };
+        }
+      }
+
+      const ref = await compile([NestGrammyModule.forRootAsync({ useClass: OptionsFactory })]);
+
+      expect(ref.get<Bot>(getBotToken()).token).toBe(TOKEN);
+    });
+  });
+
   describe('options validation', () => {
     it('rejects an empty token', async () => {
       await expect(compile([NestGrammyModule.forRoot({ token: '  ' })])).rejects.toThrow(
         '[nest-grammy] token is empty',
       );
+    });
+
+    it('rejects a missing token from forRootAsync', async () => {
+      await expect(
+        compile([
+          NestGrammyModule.forRootAsync({
+            useFactory: () => ({ token: process.env['NEST_GRAMMY_MISSING_TOKEN'] as string }),
+          }),
+        ]),
+      ).rejects.toThrow('[nest-grammy] token is empty');
     });
 
     it('rejects webhook mode without webhook.path', async () => {
