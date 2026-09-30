@@ -3,6 +3,7 @@ export { Update } from './decorators/core/update.decorator.ts';
 export { InjectApi } from './decorators/inject/inject-api.decorator.ts';
 export { InjectBot } from './decorators/inject/inject-bot.decorator.ts';
 export { Command } from './decorators/listeners/command.decorator.ts';
+export { Hears } from './decorators/listeners/hears.decorator.ts';
 export { Help } from './decorators/listeners/help.decorator.ts';
 export { On } from './decorators/listeners/on.decorator.ts';
 export { Start } from './decorators/listeners/start.decorator.ts';
