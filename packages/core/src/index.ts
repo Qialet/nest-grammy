@@ -9,6 +9,12 @@ export { Help } from './decorators/listeners/help.decorator.ts';
 export { On } from './decorators/listeners/on.decorator.ts';
 export { Start } from './decorators/listeners/start.decorator.ts';
 export { Use } from './decorators/listeners/use.decorator.ts';
+export { CommandArgs } from './decorators/params/command-args.decorator.ts';
+export { Ctx } from './decorators/params/ctx.decorator.ts';
+export { Message } from './decorators/params/message.decorator.ts';
+export { Next } from './decorators/params/next.decorator.ts';
+export { Payload } from './decorators/params/payload.decorator.ts';
+export { Sender } from './decorators/params/sender.decorator.ts';
 export type { ListenerMetadata, ListenerType } from './interfaces/listener-metadata.interface.ts';
 export type {
   NestGrammyModuleOptions,
