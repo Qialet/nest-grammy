@@ -1,4 +1,7 @@
 export { DEFAULT_BOT_NAME, GRAMMY_MODULE_OPTIONS } from './constants.ts';
+export { GrammyArgumentsHost } from './context/grammy-arguments-host.ts';
+export type { GrammyContextType } from './context/grammy-context-type.ts';
+export { GrammyExecutionContext } from './context/grammy-execution-context.ts';
 export { Update } from './decorators/core/update.decorator.ts';
 export { InjectApi } from './decorators/inject/inject-api.decorator.ts';
 export { InjectBot } from './decorators/inject/inject-bot.decorator.ts';
