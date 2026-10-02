@@ -1,11 +1,11 @@
 import { Injectable, Logger, Scope } from '@nestjs/common';
-import { DiscoveryModule } from '@nestjs/core';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ExplorerService } from '../../src/explorer/explorer.service.ts';
-import { Command, Hears, On, Start, Update, Use } from '../../src/index.ts';
+import { Command, Hears, NestGrammyModule, On, Start, Update, Use } from '../../src/index.ts';
+import { BOT_INFO } from '../utils/bot-info.ts';
 
 @Update()
 class GreeterUpdate {
@@ -65,8 +65,10 @@ describe('ExplorerService discovery', () => {
     providers: NonNullable<Parameters<typeof Test.createTestingModule>[0]['providers']>,
   ) {
     moduleRef = await Test.createTestingModule({
-      imports: [DiscoveryModule],
-      providers: [ExplorerService, ...providers],
+      imports: [
+        NestGrammyModule.forRoot({ token: '123456:TEST-TOKEN', botOptions: { botInfo: BOT_INFO } }),
+      ],
+      providers,
     }).compile();
     return moduleRef.get(ExplorerService).discover();
   }
