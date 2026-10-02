@@ -151,9 +151,11 @@ describe('ExplorerService registration', () => {
       ],
       providers,
     }).compile();
-    await moduleRef.init();
     const bot = moduleRef.get<Bot>(getBotToken());
-    return { bot, mock: installApiMock(bot) };
+    // Installed before init: bootstrap starts polling, which must not reach Telegram.
+    const mock = installApiMock(bot);
+    await moduleRef.init();
+    return { bot, mock };
   }
 
   it('calls the @Update handler on handleUpdate', async () => {
@@ -199,7 +201,7 @@ describe('ExplorerService registration', () => {
 
     await bot.handleUpdate(commandUpdate('count'));
 
-    expect(mock.calls).toEqual([]);
+    expect(mock.payloads('sendMessage')).toEqual([]);
   });
 
   it('does not reply with autoReply: false', async () => {
@@ -207,7 +209,7 @@ describe('ExplorerService registration', () => {
 
     await bot.handleUpdate(messageUpdate('ping'));
 
-    expect(mock.calls).toEqual([]);
+    expect(mock.payloads('sendMessage')).toEqual([]);
   });
 
   it('replies with the value returned by interceptors', async () => {
@@ -232,7 +234,7 @@ describe('ExplorerService registration', () => {
 
     await bot.handleUpdate(commandUpdate('request'));
 
-    expect(mock.calls).toEqual([]);
+    expect(mock.payloads('sendMessage')).toEqual([]);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('[nest-grammy] RequestScopedUpdate'));
   });
 
