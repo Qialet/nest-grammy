@@ -9,9 +9,13 @@ import {
 
 describe('constants', () => {
   it('prefixes metadata keys with nest-grammy:', () => {
-    for (const key of [UPDATE_METADATA, LISTENERS_METADATA, PARAM_ARGS_METADATA]) {
+    for (const key of [UPDATE_METADATA, LISTENERS_METADATA]) {
       expect(key).toMatch(/^nest-grammy:/);
     }
+  });
+
+  it("stores param metadata under Nest's route args key", () => {
+    expect(PARAM_ARGS_METADATA).toBe('__routeArguments__');
   });
 
   it('uses unique metadata keys', () => {
