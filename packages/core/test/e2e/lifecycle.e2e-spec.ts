@@ -44,6 +44,38 @@ describe('Bot lifecycle', () => {
     expect(mock.payloads('deleteWebhook')).toEqual([{ drop_pending_updates: true }]);
   });
 
+  it('stops polling on close', async () => {
+    const { app, bot } = await createApp();
+    await app.init();
+
+    await app.close();
+
+    expect(bot.isRunning()).toBe(false);
+  });
+
+  it('survives a second close', async () => {
+    const { app, bot } = await createApp();
+    await app.init();
+    await app.close();
+    const stop = vi.spyOn(bot, 'stop');
+
+    await expect(app.close()).resolves.toBeUndefined();
+    expect(stop).not.toHaveBeenCalled();
+  });
+
+  it('logs a stop failure instead of throwing', async () => {
+    const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const { app, bot } = await createApp();
+    await app.init();
+    vi.spyOn(bot, 'stop').mockRejectedValue(new Error('network down'));
+
+    await expect(app.close()).resolves.toBeUndefined();
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('[nest-grammy] Failed to stop the bot'),
+      expect.stringContaining('network down'),
+    );
+  });
+
   it('does not start polling in webhook mode', async () => {
     const { app, bot } = await createApp({ mode: 'webhook', webhook: { path: '/telegram' } });
 

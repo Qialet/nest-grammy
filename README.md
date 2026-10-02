@@ -20,6 +20,17 @@ pnpm add nest-grammy grammy
 
 _Coming in 0.1._
 
+### Graceful shutdown
+
+In polling mode the bot starts when the application bootstraps and stops on
+`app.close()`. To stop it on `SIGINT`/`SIGTERM` as well, enable Nest shutdown hooks:
+
+```ts
+const app = await NestFactory.create(AppModule);
+app.enableShutdownHooks();
+await app.listen(3000);
+```
+
 ## Development
 
 ```bash
