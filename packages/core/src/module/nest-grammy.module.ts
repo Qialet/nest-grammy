@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 
+import { ExplorerService } from '../explorer/explorer.service.ts';
 import { getApiToken, getBotToken } from '../utils/tokens.ts';
 import { apiProvider, botProvider } from './bot.providers.ts';
 import { ConfigurableModuleClass } from './nest-grammy.module-definition.ts';
@@ -24,7 +25,7 @@ import { ConfigurableModuleClass } from './nest-grammy.module-definition.ts';
  */
 @Module({
   imports: [DiscoveryModule],
-  providers: [botProvider, apiProvider],
+  providers: [botProvider, apiProvider, ExplorerService],
   exports: [getBotToken(), getApiToken()],
 })
 export class NestGrammyModule extends ConfigurableModuleClass {}

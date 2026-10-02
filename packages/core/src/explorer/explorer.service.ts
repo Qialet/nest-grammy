@@ -1,10 +1,17 @@
+import type { OnModuleInit } from '@nestjs/common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DiscoveryService, MetadataScanner } from '@nestjs/core';
+import { DiscoveryService, ExternalContextCreator, MetadataScanner } from '@nestjs/core';
 import type { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
+import type { Bot, BotError, Context, Middleware, NextFunction } from 'grammy';
 
-import { UPDATE_METADATA } from '../constants.ts';
+import { GRAMMY_CONTEXT_TYPE, PARAM_ARGS_METADATA, UPDATE_METADATA } from '../constants.ts';
+import type { GrammyContextType } from '../context/grammy-context-type.ts';
+import { GrammyParamsFactory } from '../context/grammy-params.factory.ts';
 import { getListenersMetadata } from '../decorators/listeners/create-listener-decorator.ts';
 import type { ListenerMetadata } from '../interfaces/listener-metadata.interface.ts';
+import type { NestGrammyModuleOptions } from '../interfaces/module-options.interface.ts';
+import { getBotToken, getOptionsToken } from '../utils/tokens.ts';
+import { registerListener } from './register-listener.ts';
 
 /** A listener decorator found on a method of an `@Update()` provider instance. */
 export interface DiscoveredListener {
@@ -14,16 +21,29 @@ export interface DiscoveredListener {
 }
 
 /**
- * Finds `@Update()` providers and the listener decorators on their methods.
+ * Finds `@Update()` providers and registers their listener methods on the bot,
+ * wrapped by `ExternalContextCreator` so guards, interceptors, pipes and filters apply.
  */
 @Injectable()
-export class ExplorerService {
+export class ExplorerService implements OnModuleInit {
   private readonly logger = new Logger(ExplorerService.name);
+  private readonly paramsFactory = new GrammyParamsFactory();
 
   constructor(
     @Inject(DiscoveryService) private readonly discoveryService: DiscoveryService,
     @Inject(MetadataScanner) private readonly metadataScanner: MetadataScanner,
+    @Inject(ExternalContextCreator)
+    private readonly externalContextCreator: ExternalContextCreator,
+    @Inject(getBotToken()) private readonly bot: Bot,
+    @Inject(getOptionsToken()) private readonly options: NestGrammyModuleOptions,
   ) {}
+
+  onModuleInit(): void {
+    this.bot.catch((error) => this.logUnhandledError(error));
+    for (const listener of this.discover()) {
+      registerListener(this.bot, listener.metadata, this.createMiddleware(listener));
+    }
+  }
 
   /**
    * Returns the listeners of all singleton `@Update()` providers: `@Use()` first,
@@ -65,6 +85,48 @@ export class ExplorerService {
         methodName,
         metadata,
       })),
+    );
+  }
+
+  private createMiddleware({ instance, methodName, metadata }: DiscoveredListener): Middleware {
+    const handler = this.externalContextCreator.create<never, GrammyContextType>(
+      instance,
+      Reflect.get(instance, methodName),
+      methodName,
+      PARAM_ARGS_METADATA,
+      this.paramsFactory,
+      undefined,
+      undefined,
+      undefined,
+      GRAMMY_CONTEXT_TYPE,
+    );
+    const autoReply = this.options.autoReply ?? true;
+    const passThrough = metadata.type === 'use';
+    return async (ctx: Context, next: NextFunction) => {
+      let nextCalled = false;
+      const trackedNext: NextFunction = () => {
+        nextCalled = true;
+        return next();
+      };
+      // The result has passed the interceptors already.
+      const result: unknown = await handler(ctx, trackedNext);
+      if (autoReply && typeof result === 'string') {
+        await ctx.reply(result);
+      }
+      // A @Use() method continues the chain unless it called next() itself;
+      // other listeners end it, as grammY handlers do.
+      if (passThrough && !nextCalled) {
+        await next();
+      }
+    };
+  }
+
+  // Replaces grammY's default handler, which stops polling on the first error.
+  private logUnhandledError(error: BotError): void {
+    const cause: unknown = error.error;
+    this.logger.error(
+      `[nest-grammy] Unhandled error while processing update ${error.ctx.update.update_id} — handle it with an exception filter`,
+      cause instanceof Error ? cause.stack : String(cause),
     );
   }
 }
