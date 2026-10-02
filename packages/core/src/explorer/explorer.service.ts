@@ -47,11 +47,14 @@ export class ExplorerService implements OnModuleInit {
 
   /**
    * Returns the listeners of all singleton `@Update()` providers: `@Use()` first,
-   * then the rest in discovery order (module, class, method).
+   * then the rest in discovery order (module, class, method). With `include` set,
+   * only providers of those modules are scanned.
    */
   discover(): DiscoveredListener[] {
+    const { include } = this.options;
     const listeners = this.discoveryService
-      .getProviders()
+      // DiscoveryService checks for the `include` key, so it is omitted when unset.
+      .getProviders(include ? { include } : {})
       .filter((wrapper) => isUpdateProvider(wrapper))
       .flatMap((wrapper) => this.discoverInstance(wrapper));
     return [
