@@ -1,4 +1,4 @@
-import type { OnApplicationBootstrap } from '@nestjs/common';
+import type { OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Bot } from 'grammy';
 
@@ -6,10 +6,11 @@ import type { NestGrammyModuleOptions } from '../interfaces/module-options.inter
 import { getBotToken, getOptionsToken } from '../utils/tokens.ts';
 
 /**
- * Starts the bot once the application has bootstrapped.
+ * Starts the bot once the application has bootstrapped and stops it on shutdown.
+ * Stopping on SIGINT/SIGTERM needs `app.enableShutdownHooks()` in the user's `main.ts`.
  */
 @Injectable()
-export class BotLifecycleService implements OnApplicationBootstrap {
+export class BotLifecycleService implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(BotLifecycleService.name);
 
   constructor(
@@ -20,6 +21,20 @@ export class BotLifecycleService implements OnApplicationBootstrap {
   onApplicationBootstrap(): void {
     if ((this.options.mode ?? 'polling') === 'polling') {
       this.launch();
+    }
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    if (!this.bot.isRunning()) {
+      return;
+    }
+    try {
+      await this.bot.stop();
+    } catch (error) {
+      this.logger.error(
+        '[nest-grammy] Failed to stop the bot — the last update offset may not be saved, so updates can be delivered again',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
