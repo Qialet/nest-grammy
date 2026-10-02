@@ -1,5 +1,5 @@
-import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import { Injectable, Logger, Scope, UseInterceptors } from '@nestjs/common';
+import type { CallHandler, ExecutionContext, NestInterceptor, Type } from '@nestjs/common';
+import { Injectable, Logger, Module, Scope, UseInterceptors } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import type { Bot, Context, NextFunction } from 'grammy';
@@ -119,6 +119,28 @@ class RequestScopedUpdate {
   }
 }
 
+@Update()
+class IncludedUpdate {
+  @Command('included')
+  onIncluded() {
+    trace.push('included');
+  }
+}
+
+@Module({ providers: [IncludedUpdate] })
+class IncludedModule {}
+
+@Update()
+class ExcludedUpdate {
+  @Command('excluded')
+  onExcluded() {
+    trace.push('excluded');
+  }
+}
+
+@Module({ providers: [ExcludedUpdate] })
+class ExcludedModule {}
+
 /** Handles an update the way `bot.start()` does: a failure goes to `bot.catch`. */
 async function handleLikePolling(bot: Bot, update: TelegramUpdate): Promise<void> {
   await bot.handleUpdate(update).catch(async (error: unknown) => {
@@ -144,10 +166,12 @@ describe('ExplorerService registration', () => {
   async function createBot(
     providers: NonNullable<Parameters<typeof Test.createTestingModule>[0]['providers']>,
     options: Partial<NestGrammyModuleOptions> = {},
+    imports: Type[] = [],
   ): Promise<{ bot: Bot; mock: ApiMock }> {
     moduleRef = await Test.createTestingModule({
       imports: [
         NestGrammyModule.forRoot({ token: TOKEN, botOptions: { botInfo: BOT_INFO }, ...options }),
+        ...imports,
       ],
       providers,
     }).compile();
@@ -157,6 +181,18 @@ describe('ExplorerService registration', () => {
     await moduleRef.init();
     return { bot, mock };
   }
+
+  it('registers only handlers of modules listed in include', async () => {
+    const { bot } = await createBot([], { include: [IncludedModule] }, [
+      IncludedModule,
+      ExcludedModule,
+    ]);
+
+    await bot.handleUpdate(commandUpdate('included'));
+    await bot.handleUpdate(commandUpdate('excluded'));
+
+    expect(trace).toEqual(['included']);
+  });
 
   it('calls the @Update handler on handleUpdate', async () => {
     const { bot, mock } = await createBot([GreeterUpdate]);
